@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<title>Quiz de Quimica da Madeira</title>
+
+<style>
+/* ==========================
+   ESTILO GERAL
+========================== */
+body{
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  margin:0;
+  padding:15px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.container{
+  background:#1e293b;
+  padding:25px;
+  border-radius:12px;
+  width:95%;
+  max-width:600px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.3);
+}
+
+h1,h2{text-align:center;}
+
+/* BOTÕES DE MATÉRIA/ASSUNTO */
+.temaBtn{
+  background:#111827;
+  padding:16px;
+  margin:10px 0;
+  border-radius:8px;
+  cursor:pointer;
+  text-align:center;
+  font-size:22px;
+  border:3px solid #1f2937;
+  user-select:none;
+  touch-action:manipulation;
+}
+
+.selecionadaMenu{
+  background:#1d4ed8 !important;
+  border:3px solid #60a5fa !important;
+}
+
+/* BARRA DE PROGRESSO DO ASSUNTO */
+.progressoAssunto{
+  height:8px;
+  background:#1f2937;
+  border-radius:6px;
+  margin-top:6px;
+}
+
+.barraInterna{
+  height:8px;
+  background:#22c55e;
+  border-radius:6px;
+}
+
+/* PERGUNTAS E OPÇÕES */
+.pergunta{
+  font-size:24px;
+  margin-bottom:20px;
+}
+
+.opcao{
+  background:#111827;
+  padding:16px;
+  margin:10px 0;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:20px;
+  border:3px solid #1f2937;
+}
+
+.selecionada{background:#1d4ed8 !important;border:3px solid #60a5fa !important;}
+.correta{background:#16a34a !important;border:3px solid #4ade80;}
+.errada{background:#dc2626 !important;border:3px solid #f87171;}
+
+/* BOTOES GERAIS */
+button{
+  margin-top:15px;
+  padding:14px;
+  width:100%;
+  border:none;
+  background:#2563eb;
+  color:white;
+  border-radius:8px;
+  font-size:18px;
+  cursor:pointer;
+}
+
+/* INPUT PARA NOME */
+input{
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  margin-top:10px;
+  font-size:18px;
+}
+
+/* BARRA DE PROGRESSO GERAL DO QUIZ */
+#barra{
+  height:12px;
+  background:#1f2937;
+  border-radius:10px;
+  margin-bottom:20px;
+  overflow:hidden;
+}
+
+#progresso{
+  height:12px;
+  background:#3b82f6;
+  width:0%;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div class="container" id="login">
+
+
+<h1>Quiz de Quimica da Madeira</h1>
+
+<p>Digite seu nome para salvar seu progresso</p>
+<input id="nomeUsuario" placeholder="Seu nome">
+<button id="btnEntrar">Entrar</button>
+</div>
+
+<!-- MENU DE MATÉRIAS -->
+<div class="container" id="menu" style="display:none"></div>
+
+<!-- TELA DE QUIZ -->
+<div class="container" id="quiz" style="display:none">
+
+<h1>Quiz de Quimica da Madeira</h1>
+<div id="barra"><div id="progresso"></div></div>
+<div id="placar"></div>
+<div id="tema"></div>
+<div class="pergunta" id="pergunta"></div>
+
+<div class="opcao" id="op0"></div>
+<div class="opcao" id="op1"></div>
+<div class="opcao" id="op2"></div>
+<div class="opcao" id="op3"></div>
+
+<div id="explicacao"></div>
+
+<button id="btnConfirmar">Confirmar</button>
+<button id="btnProxima" style="display:none">Próxima</button>
+<button id="btnVoltar">Voltar</button>
+</div>
+
+<script>
+// ==========================
+// CONFIGURAÇÕES E VARIÁVEIS
+// ==========================
+const QUIZ_ID = "Quiz de Quimica da Madeira1" // ID único do quiz
+let usuario=""
+let materiaSelecionada=null
+let assuntoSelecionado=null
+let opcaoSelecionada=null
+let perguntas=[]
+let atual=0
+let pontos=0
+let respondido=false
+let erros=[]
+
+// ==========================
+// BANCO DE PERGUNTAS
+
+let banco=[
+
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"A celulose é importante para a madeira porque:","opcoes":["Armazena água","Produz energia","Garante resistência e sustentação","Forma minerais"],"correta":2,"explicacao":"A celulose é responsável pela resistência e sustentação da estrutura da madeira."},
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"Qual alternativa descreve corretamente a função estrutural da madeira?","opcoes":["Depende apenas dos minerais","Está relacionada à presença de celulose","É causada pelos extrativos","É resultado das proteínas"],"correta":1,"explicacao":"A estrutura da madeira depende principalmente da celulose, que fornece resistência mecânica."},
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"Qual componente da madeira está diretamente ligado à sua resistência?","opcoes":["Celulose","Proteínas","Minerais","Extrativos"],"correta":0,"explicacao":"A celulose é o principal componente responsável pela resistência da madeira."},
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"A resistência da madeira está associada principalmente a qual característica da celulose?","opcoes":["Sua cor","Sua solubilidade em água","Sua presença em pequenas quantidades","Sua estrutura polimérica organizada"],"correta":3,"explicacao":"A organização das cadeias de celulose (estrutura polimérica) confere alta resistência à madeira."},
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"Quais são os principais componentes da madeira?","opcoes":["Água e proteínas","Celulose, hemicelulose e lignina","Somente minerais","Somente extrativos"],"correta":1,"explicacao":"Os principais componentes são celulose, hemicelulose e lignina."},
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"A principal função da celulose na madeira é:","opcoes":["Dar cor à madeira","Armazenar minerais","Fornecer resistência estrutural","Produzir resinas"],"correta":2,"explicacao":"A celulose é responsável pela resistência estrutural da madeira, formando sua base."},
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"Qual componente da madeira atua como ‘cimento’ entre as fibras, conferindo rigidez estrutural?","opcoes":["Celulose","Hemicelulose","Lignina","Água livre"],"correta":2,"explicacao":"A lignina atua como um agente de ligação entre as fibras, conferindo rigidez e suporte estrutural à madeira."},
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"Os extrativos da madeira são importantes porque:","opcoes":["Formam a estrutura principal da madeira","São responsáveis pela resistência mecânica principal","São o principal polímero estrutural","Influenciam cor, odor e resistência a agentes biológicos"],"correta":3,"explicacao":"Os extrativos influenciam propriedades como cor, odor e resistência natural da madeira contra organismos e degradação."},
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"Na composição da madeira, a hemicelulose tem como característica:","opcoes":["Ser altamente cristalina","Ser um polímero amorfo e de menor resistência","Ser mineral","Ser totalmente insolúvel em água"],"correta":1,"explicacao":"A hemicelulose possui estrutura amorfa e menor resistência em comparação com a celulose."},
+{"materia":"Química da Madeira","assunto":"Composição da madeira","pergunta":"A água presente na madeira pode ser classificada principalmente em:","opcoes":["Água mineral e água salgada","Água estrutural e água orgânica","Água livre e água de adesão","Água sólida e gasosa"],"correta":2,"explicacao":"A água na madeira é geralmente classificada em água livre e água ligada (de adesão) às paredes celulares."},
+
+{"materia":"Química da Madeira","assunto":"Propriedades da madeira","pergunta":"Uma madeira com alto teor de lignina será mais:","opcoes":["Flexível","Mole","Rígida","Solúvel"],"correta":2,"explicacao":"A lignina confere rigidez à madeira."},
+{"materia":"Química da Madeira","assunto":"Propriedades da madeira","pergunta":"A flexibilidade da madeira está mais associada a qual característica estrutural?","opcoes":["Alto teor de minerais","Predominância de lignina rígida","Menor rigidez estrutural e maior proporção de hemicelulose","Alta cristalinidade da celulose"],"correta":2,"explicacao":"A flexibilidade aumenta quando há menor rigidez estrutural e maior presença de hemiceluloses, que são mais facilmente deformáveis que a celulose e a lignina."},
+{"materia":"Química da Madeira","assunto":"Propriedades da madeira","pergunta":"A resistência mecânica da madeira está diretamente relacionada principalmente a:","opcoes":["Quantidade de extrativos presentes","Organização das fibras de celulose","Teor de água livre na madeira","Presença de minerais"],"correta":1,"explicacao":"A resistência mecânica depende principalmente da organização e alinhamento das fibras de celulose na parede celular."},
+{"materia":"Química da Madeira","assunto":"Propriedades da madeira","pergunta":"Uma madeira com baixo teor de lignina tende a ser:","opcoes":["Mais rígida e resistente","Mais densa e dura","Menos rígida e mais suscetível a deformações","Totalmente insolúvel em solventes"],"correta":2,"explicacao":"A lignina contribui para rigidez e sustentação estrutural; sua redução diminui a resistência da madeira."},
+{"materia":"Química da Madeira","assunto":"Propriedades da madeira","pergunta":"A densidade da madeira está relacionada principalmente a:","opcoes":["Quantidade de espaços vazios e composição celular","Teor de proteínas na madeira","Cor da madeira","Quantidade de resinas externas"],"correta":0,"explicacao":"A densidade depende da proporção entre material sólido da parede celular e espaços vazios (lúmen)."},
+
+{"materia":"Química da Madeira","assunto":"Estrutura e organização da madeira","pergunta":"Por que a madeira é considerada um material complexo?","opcoes":["Porque tem pouca substância","Porque possui muitos componentes interligados","Porque é líquida","Porque é simples"],"correta":1,"explicacao":"A madeira possui muitos compostos químicos interligados, dificultando sua análise."},
+{"materia":"Química da Madeira","assunto":"Estrutura e organização da madeira","pergunta":"A estrutura da madeira é formada principalmente por:","opcoes":["Somente água e minerais","Células vegetais organizadas em fibras e parede celular","Apenas proteínas estruturais","Somente substâncias inorgânicas"],"correta":2,"explicacao":"A madeira é formada por células vegetais organizadas em fibras, com parede celular rica em celulose, hemicelulose e lignina."},
+{"materia":"Química da Madeira","assunto":"Estrutura e organização da madeira","pergunta":"Qual componente está diretamente relacionado à rigidez estrutural da madeira?","opcoes":["Extrativos","Celulose","Água livre","Proteínas"],"correta":1,"explicacao":"A rigidez estrutural da madeira está principalmente associada à celulose, devido à sua estrutura fibrosa e organizada."},
+{"materia":"Química da Madeira","assunto":"Estrutura e organização da madeira","pergunta":"A organização da madeira varia de acordo com:","opcoes":["Apenas o tipo de solo","Espécie, idade e parte da árvore","Somente a temperatura ambiente","Apenas a quantidade de água"],"correta":2,"explicacao":"A estrutura da madeira varia conforme espécie, idade da árvore e posição no tronco (cerne, alburno, lenho inicial e tardio)."},
+{"materia":"Química da Madeira","assunto":"Estrutura e organização da madeira","pergunta":"A unidade estrutural básica da madeira é:","opcoes":["Molécula de água","Célula vegetal","Mineral inorgânico","Proteína enzimática"],"correta":1,"explicacao":"A madeira é formada por células vegetais, que constituem sua unidade estrutural básica."},
+
+{"materia":"Química da Madeira","assunto":"Separação e análise da madeira","pergunta":"Por que é difícil separar completamente os componentes da madeira?","opcoes":["Porque são poucos","Porque estão fortemente ligados","Porque são líquidos","Porque são minerais"],"correta":1,"explicacao":"Os componentes estão quimicamente ligados, dificultando a separação sem alterações."},
+{"materia":"Química da Madeira","assunto":"Separação e análise da madeira","pergunta":"Qual técnica é mais usada para separar a lignina da celulose na indústria de papel?","opcoes":["Filtração simples","Processo Kraft","Decantação","Destilação"],"correta":1,"explicacao":"O processo Kraft é amplamente utilizado para separar lignina da celulose por meio de reagentes químicos."},
+{"materia":"Química da Madeira","assunto":"Separação e análise da madeira","pergunta":"Qual componente da madeira é mais resistente à degradação química e biológica?","opcoes":["Lignina","Amido","Água livre","Cloro"],"correta":0,"explicacao":"A lignina é o componente mais resistente da madeira, dificultando sua decomposição."},
+{"materia":"Química da Madeira","assunto":"Separação e análise da madeira","pergunta":"Qual substância é mais facilmente removida durante o processo de secagem da madeira?","opcoes":["Celulose","Lignina","Água livre","Hemicelulose"],"correta":2,"explicacao":"A água livre é a primeira a ser removida durante a secagem da madeira."},
+{"materia":"Química da Madeira","assunto":"Separação e análise da madeira","pergunta":"Qual processo utiliza reagentes químicos para separar os componentes estruturais da madeira?","opcoes":["Secagem ao ar","Polpação química","Corte mecânico","Moagem manual"],"correta":1,"explicacao":"A polpação química utiliza reagentes para separar lignina, celulose e hemicelulose."},
+
+{"materia":"Química da Madeira","assunto":"Reações químicas (bases/oxidantes)","pergunta":"O tratamento da madeira com bases fortes pode levar principalmente à degradação de quais componentes estruturais?","opcoes":["Apenas água e sais minerais","Somente gases presentes na madeira","Lignina e polissacarídeos como celulose e hemicelulose","Apenas proteínas estruturais"],"correta":2,"explicacao":"Bases fortes podem degradar principalmente a lignina e também causar hidrólise parcial de polissacarídeos como celulose e hemicelulose."},
+{"materia":"Química da Madeira","assunto":"Reações químicas (bases/oxidantes)","pergunta":"Qual é um efeito comum de agentes oxidantes na madeira?","opcoes":["Aumento da resistência mecânica","Alteração e degradação da lignina","Formação de minerais metálicos","Transformação da madeira em gás"],"correta":1,"explicacao":"Agentes oxidantes atacam principalmente a lignina, causando sua degradação e modificação estrutural."},
+{"materia":"Química da Madeira","assunto":"Reações químicas (bases/oxidantes)","pergunta":"Em processos químicos industriais, as bases fortes atuam principalmente promovendo qual tipo de reação na madeira?","opcoes":["Reações de neutralização de gases","Hidrólise e quebra de ligações em componentes estruturais","Formação de cristais inorgânicos","Evaporação de componentes sólidos"],"correta":1,"explicacao":"Bases fortes promovem hidrólise e quebra de ligações químicas em componentes como lignina e hemicelulose."},
+{"materia":"Química da Madeira","assunto":"Reações químicas (bases/oxidantes)","pergunta":"Qual componente da madeira é mais suscetível à ação de agentes oxidantes?","opcoes":["Celulose cristalina","Lignina","Água livre","Minerais inorgânicos presentes na madeira"],"correta":1,"explicacao":"A lignina é o principal componente da madeira mais sensível à oxidação, sofrendo degradação estrutural."},
+
+{"materia":"Química da Madeira","assunto":"Lignina","pergunta":"A lignina pode ser definida como:","opcoes":["Um tipo de proteína estrutural","Uma substância que atua como 'cola' na madeira","Um mineral presente nas cinzas","Um açúcar simples"],"correta":1,"explicacao":"A lignina funciona como uma 'cola', dando rigidez e sustentação à madeira."},
+{"materia":"Química da Madeira","assunto":"Lignina","pergunta":"Qual é a principal função da lignina na madeira?","opcoes":["Armazenar nutrientes","Transportar água","Produzir energia","Conferir rigidez e atuar como ligação entre as células"],"correta":3,"explicacao":"A lignina confere rigidez à madeira e atua como uma substância de ligação entre as células vegetais."},
+{"materia":"Química da Madeira","assunto":"Lignina","pergunta":"A lignina pertence a qual classe de compostos?","opcoes":["Substâncias fenólicas","Carboidratos","Proteínas","Minerais"],"correta":0,"explicacao":"A lignina é uma substância fenólica presente na parede celular das plantas."},
+{"materia":"Química da Madeira","assunto":"Lignina","pergunta":"Uma característica da lignina é:","opcoes":["Alta solubilidade em água","Baixa solubilidade em água","Composição mineral","Ser um açúcar simples"],"correta":1,"explicacao":"A lignina é praticamente insolúvel em água na maioria das condições."},
+{"materia":"Química da Madeira","assunto":"Lignina","pergunta":"A presença de lignina na madeira está relacionada principalmente a:","opcoes":["Maior flexibilidade","Maior rigidez","Menor resistência","Maior teor de água"],"correta":1,"explicacao":"A lignina aumenta a rigidez e a resistência estrutural da madeira."},
+{"materia":"Química da Madeira","assunto":"Lignina","pergunta":"A lignina pode ser classificada corretamente como:","opcoes":["Um carboidrato simples","Um tipo de proteína estrutural","Um polímero fenólico aromático complexo","Um composto mineral"],"correta":2,"explicacao":"A lignina é um polímero fenólico aromático complexo presente na parede celular das plantas."},
+{"materia":"Química da Madeira","assunto":"Lignina","pergunta":"Em relação à degradação, a lignina se caracteriza por:","opcoes":["Ser altamente solúvel em água","Ser facilmente degradada por enzimas simples","Ser um polímero altamente resistente à degradação química e biológica","Ser rapidamente convertida em açúcar"],"correta":2,"explicacao":"A lignina é altamente resistente à degradação química e biológica, sendo difícil de quebrar."},
+{"materia":"Química da Madeira","assunto":"Lignina","pergunta":"A lignina é formada principalmente a partir de:","opcoes":["Aminoácidos","Minerais dissolvidos","Monômeros fenólicos derivados da via dos fenilpropanoides","Amido vegetal"],"correta":2,"explicacao":"A lignina é formada a partir de monômeros fenólicos derivados da via dos fenilpropanoides."},
+{"materia":"Química da Madeira","assunto":"Lignina","pergunta":"A presença de lignina na madeira contribui principalmente para a proteção contra:","opcoes":["Fotossíntese excessiva","Ataques microbianos e degradação estrutural","Armazenamento de energia","Absorção de luz azul"],"correta":1,"explicacao":"A lignina contribui para a proteção contra microrganismos e aumenta a resistência estrutural da madeira."},
+
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"A celulose é formada por:","opcoes":["Unidades de glicose","Ácidos graxos","Proteínas","Minerais"],"correta":0,"explicacao":"A celulose é formada por cadeias longas de unidades de glicose."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"A celulose é um polímero constituído principalmente por qual tipo de ligação entre suas unidades?","opcoes":["Ligação iônica","Ligação glicosídica","Ligação metálica","Ligação peptídica"],"correta":1,"explicacao":"A celulose é formada por unidades de glicose ligadas por ligações glicosídicas β-1,4."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"Qual é a principal função estrutural da celulose nas plantas?","opcoes":["Armazenamento de energia","Formação de parede celular e sustentação","Transporte de seiva elaborada","Produção de hormônios"],"correta":1,"explicacao":"A celulose compõe a parede celular das plantas, garantindo rigidez e sustentação estrutural."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"A celulose pertence a qual grupo de biomoléculas?","opcoes":["Lipídios","Carboidratos","Proteínas","Ácidos nucleicos"],"correta":1,"explicacao":"A celulose é um polissacarídeo, portanto um carboidrato estrutural."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"Qual característica torna a celulose resistente à digestão humana?","opcoes":["Presença de lipídios","Tipo de ligação entre glicoses (β-1,4)","Alta quantidade de proteínas","Estrutura mineralizada"],"correta":1,"explicacao":"A celulose não é digerida por humanos devido à ligação β-1,4-glicosídica, pois não possuímos a enzima celulase."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"A celulose é considerada um polímero:","opcoes":["Sintético e ramificado","Natural e linear","Inorgânico e cristalino","Lipídico e insolúvel"],"correta":1,"explicacao":"A celulose é um polímero natural e linear formado por unidades de glicose."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"Qual substância é obtida industrialmente a partir da celulose da madeira?","opcoes":["Gasolina","Papel","Vidro","Ferro"],"correta":1,"explicacao":"A celulose é a principal matéria-prima utilizada na produção de papel."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"A celulose é encontrada principalmente em qual parte da planta?","opcoes":["Cloroplastos","Parede celular","Núcleo celular","Citoplasma"],"correta":1,"explicacao":"A celulose compõe a parede celular das células vegetais."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"Qual é a unidade básica repetitiva da celulose?","opcoes":["Aminoácidos","Nucleotídeos","Glicose","Ácidos graxos"],"correta":2,"explicacao":"A celulose é formada por monômeros de glicose repetidos em cadeia."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"A celulose pode ser classificada como um polímero de que tipo?","opcoes":["Polissacarídeo","Polipeptídeo","Triglicerídeo","Ácido nucleico"],"correta":0,"explicacao":"A celulose é um polissacarídeo, ou seja, um carboidrato complexo estrutural."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"Qual propriedade da celulose contribui para a rigidez da madeira?","opcoes":["Alta solubilidade em água","Formação de microfibrilas resistentes","Baixa massa molecular","Natureza lipídica"],"correta":1,"explicacao":"As microfibrilas de celulose formam estruturas resistentes que conferem rigidez à parede celular da madeira."},
+{"materia":"Química da Madeira","assunto":"Celulose","pergunta":"A celulose é solúvel em água?","opcoes":["Sim, completamente","Sim, parcialmente","Não, é praticamente insolúvel","Depende da temperatura apenas"],"correta":2,"explicacao":"A celulose é praticamente insolúvel em água devido às fortes ligações de hidrogênio entre suas cadeias."},
+
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"As hemiceluloses são:","opcoes":["Mais resistentes que a celulose","Polímeros menores e mais fáceis de degradar","Compostos inorgânicos","Insolúveis em qualquer solução"],"correta":1,"explicacao":"As hemiceluloses possuem menor grau de polimerização e são mais fáceis de degradar que a celulose."},
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"As hemiceluloses se caracterizam por:","opcoes":["Baixo grau de polimerização","Alta resistência estrutural","Composição mineral","Serem insolúveis em água"],"correta":0,"explicacao":"As hemiceluloses possuem baixo grau de polimerização em comparação à celulose."},
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"Em relação à celulose, as hemiceluloses são:","opcoes":["Mais organizadas","Mais resistentes","Menos resistentes e mais fáceis de degradar","Totalmente insolúveis"],"correta":2,"explicacao":"As hemiceluloses são menos organizadas, menos resistentes e mais facilmente degradadas que a celulose."},
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"As hemiceluloses pertencem a qual grupo de compostos?","opcoes":["Proteínas","Polissacarídeos","Minerais","Lipídios"],"correta":1,"explicacao":"As hemiceluloses são polissacarídeos presentes na parede celular vegetal."},
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"Uma característica importante das hemiceluloses é:","opcoes":["Alta cristalinidade","Alta resistência mecânica","Facilidade de hidrólise","Composição exclusivamente mineral"],"correta":2,"explicacao":"As hemiceluloses são mais suscetíveis à hidrólise devido à sua estrutura menos organizada."},
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"Qual componente das hemiceluloses varia mais entre espécies vegetais?","opcoes":["Sempre é celulose","Composição inorgânica fixa","Composição química heterogênea","É sempre lignina"],"correta":2,"explicacao":"As hemiceluloses apresentam composição química heterogênea, variando entre diferentes espécies vegetais."},
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"As hemiceluloses diferem da celulose principalmente por:","opcoes":["Serem totalmente cristalinas","Terem cadeia linear longa","Não existirem em plantas lenhosas","Possuírem estrutura ramificada e amorfa"],"correta":3,"explicacao":"As hemiceluloses possuem estrutura ramificada e amorfa, diferindo da celulose mais cristalina e linear."},
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"Qual é uma função das hemiceluloses na parede celular?","opcoes":["Armazenar DNA","Ligar celulose e lignina","Formar minerais","Produzir cloro"],"correta":1,"explicacao":"As hemiceluloses ajudam na ligação entre celulose e lignina na parede celular vegetal."},
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"Em processos de polpação, as hemiceluloses:","opcoes":["São mais resistentes que a lignina","Não sofrem alteração","São parcialmente removidas ou degradadas","Viram minerais"],"correta":2,"explicacao":"Durante a polpação, as hemiceluloses são parcialmente removidas ou degradadas devido à sua menor resistência química."},
+{"materia":"Química da Madeira","assunto":"Hemicelulose","pergunta":"Qual é uma característica química das hemiceluloses?","opcoes":["Baixo grau de polimerização","Alta cristalinidade","Estrutura mineral","Insolúveis em qualquer meio"],"correta":0,"explicacao":"As hemiceluloses possuem baixo grau de polimerização em comparação com a celulose."},
+
+{"materia":"Química da Madeira","assunto":"Holocelulose","pergunta":"A holocelulose é composta por:","opcoes":["Lignina + extrativos","Celulose + lignina","Celulose + hemicelulose","Hemicelulose + extrativos"],"correta":2,"explicacao":"Holocelulose é o conjunto de celulose e hemicelulose."},
+{"materia":"Química da Madeira","assunto":"Holocelulose","pergunta":"A holocelulose representa qual fração da madeira?","opcoes":["Apenas lignina","Apenas extrativos","Celulose e hemicelulose juntas","Somente minerais"],"correta":2,"explicacao":"A holocelulose corresponde à soma de celulose e hemicelulose na madeira."},
+{"materia":"Química da Madeira","assunto":"Holocelulose","pergunta":"Para obter a holocelulose da madeira, é necessário remover principalmente:","opcoes":["Extrativos","Minerais","Celulose","Lignina"],"correta":3,"explicacao":"A remoção da lignina permite isolar a holocelulose (celulose + hemicelulose)."},
+{"materia":"Química da Madeira","assunto":"Holocelulose","pergunta":"A holocelulose é composta por quais tipos de compostos?","opcoes":["Compostos fenólicos","Polissacarídeos","Minerais","Proteínas"],"correta":1,"explicacao":"A holocelulose é formada por polissacarídeos, como celulose e hemicelulose."},
+{"materia":"Química da Madeira","assunto":"Holocelulose","pergunta":"Qual alternativa descreve corretamente a holocelulose?","opcoes":["Parte mineral da madeira","Conjunto de polissacarídeos estruturais","Frações de lignina modificada","Mistura de extrativos orgânicos"],"correta":1,"explicacao":"A holocelulose é formada pelos polissacarídeos estruturais da madeira: celulose e hemicelulose."},
+{"materia":"Química da Madeira","assunto":"Holocelulose","pergunta":"O que é holocelulose?","opcoes":["Somente lignina","Celulose + hemicelulose","Extrativos + minerais","Proteínas + ácidos"],"correta":1,"explicacao":"Holocelulose é a soma de celulose e hemicelulose."},
+
+{"materia":"Química da Madeira","assunto":"Extrativos","pergunta":"Os extrativos da madeira são:","opcoes":["Componentes estruturais principais","Substâncias removidas com solventes","Apenas minerais","Apenas proteínas"],"correta":1,"explicacao":"Extrativos são substâncias que podem ser removidas com solventes, como resinas e óleos."},
+{"materia":"Química da Madeira","assunto":"Extrativos","pergunta":"Os extrativos na madeira influenciam principalmente quais propriedades?","opcoes":["Resistência estrutural","Teor de minerais","Cor, cheiro e durabilidade","Quantidade de celulose"],"correta":2,"explicacao":"Os extrativos influenciam propriedades como cor, odor e resistência a organismos."},
+{"materia":"Química da Madeira","assunto":"Extrativos","pergunta":"Os extrativos podem ser removidos da madeira por meio de:","opcoes":["Processos mecânicos simples","Apenas aquecimento","Uso de solventes orgânicos","Adição de minerais"],"correta":2,"explicacao":"Os extrativos são removidos principalmente com o uso de solventes orgânicos."},
+{"materia":"Química da Madeira","assunto":"Extrativos","pergunta":"Qual das alternativas apresenta exemplos de extrativos?","opcoes":["Celulose e lignina","Resinas e óleos","Minerais e cinzas","Proteínas e enzimas"],"correta":1,"explicacao":"Extrativos incluem substâncias como resinas, óleos e taninos."},
+{"materia":"Química da Madeira","assunto":"Extrativos","pergunta":"Os extrativos fazem parte de qual categoria na madeira?","opcoes":["Componentes não estruturais","Componentes estruturais principais","Minerais essenciais","Proteínas estruturais"],"correta":0,"explicacao":"Os extrativos são considerados componentes não estruturais da madeira."},
+{"materia":"Química da Madeira","assunto":"Extrativos","pergunta":"A madeira madura possui aproximadamente quanto de proteínas?","opcoes":["10%","5%","1%","20%"],"correta":2,"explicacao":"A madeira madura possui cerca de 1% de proteínas."},
+{"materia":"Química da Madeira","assunto":"Extrativos","pergunta":"Os extrativos influenciam principalmente:","opcoes":["Resistência estrutural","Cor e cheiro da madeira","Quantidade de celulose","Presença de minerais"],"correta":1,"explicacao":"Extrativos influenciam propriedades como cor, odor e resistência a pragas."},
+
+{"materia":"Química da Madeira","assunto":"Composição geral","pergunta":"A maior parte da madeira é composta por:","opcoes":["Proteínas e minerais","Extrativos e lignina","Carboidratos e substâncias fenólicas","Ácidos e álcoois"],"correta":2,"explicacao":"Cerca de 97% da madeira é composta por carboidratos e substâncias fenólicas (como a lignina)."},
+{"materia":"Química da Madeira","assunto":"Composição geral","pergunta":"Quais são os principais grupos químicos presentes na maior parte da madeira?","opcoes":["Proteínas e minerais","Ácidos e álcoois","Extrativos e minerais","Carboidratos e substâncias fenólicas"],"correta":3,"explicacao":"A maior parte da madeira é composta por carboidratos (celulose e hemicelulose) e substâncias fenólicas (principalmente lignina)."},
+{"materia":"Química da Madeira","assunto":"Composição geral","pergunta":"Qual alternativa apresenta corretamente os principais constituintes da madeira?","opcoes":["Carboidratos e substâncias fenólicas","Proteínas e enzimas","Ácidos e bases","Minerais e água"],"correta":0,"explicacao":"Os principais constituintes da madeira são carboidratos e substâncias fenólicas."},
+{"materia":"Química da Madeira","assunto":"Composição geral","pergunta":"A composição predominante da madeira está relacionada principalmente a:","opcoes":["Proteínas estruturais","Compostos minerais","Carboidratos e substâncias fenólicas","Ácidos orgânicos"],"correta":2,"explicacao":"A madeira é composta majoritariamente por carboidratos (celulose e hemicelulose) e substâncias fenólicas (principalmente lignina)."},
+{"materia":"Química da Madeira","assunto":"Composição geral","pergunta":"A maior fração da madeira é formada por:","opcoes":["Extrativos e proteínas","Minerais e água","Polissacarídeos e lignina","Ácidos e álcoois"],"correta":2,"explicacao":"A maior fração da madeira é composta por polissacarídeos (celulose e hemicelulose) e lignina."},
+{"materia":"Química da Madeira","assunto":"Composição geral","pergunta":"A composição química da madeira é uniforme?","opcoes":["Sim, sempre igual","Não, varia entre espécies e partes","Apenas em árvores jovens","Apenas no tronco"],"correta":1,"explicacao":"A composição varia entre espécies, partes da árvore e condições ambientais."},
+
+{"materia":"Química da Madeira","assunto":"Reações químicas (bases/oxidantes)","pergunta":"Bases fortes podem causar o que na madeira?","opcoes":["Nenhuma reação","Apenas mudança de cor","Degradação de componentes","Aumento de proteínas"],"correta":2,"explicacao":"Bases fortes podem degradar lignina e carboidratos."},
+{"materia":"Química da Madeira","assunto":"Reações químicas (bases/oxidantes)","pergunta":"O tratamento da madeira com bases fortes pode provocar principalmente a degradação de quais componentes?","opcoes":["Apenas água e minerais","Somente gases dissolvidos","Lignina e polissacarídeos estruturais","Apenas proteínas"],"correta":2,"explicacao":"Bases fortes podem degradar principalmente a lignina e também causar hidrólise parcial de polissacarídeos como celulose e hemicelulose."},
+{"materia":"Química da Madeira","assunto":"Reações químicas (bases/oxidantes)","pergunta":"Qual é um efeito comum de agentes oxidantes na madeira?","opcoes":["Aumento da resistência mecânica","Alteração e degradação da lignina","Formação de metais pesados","Transformação da madeira em vapor"],"correta":1,"explicacao":"Agentes oxidantes atuam principalmente na degradação da lignina, causando alterações estruturais na madeira."},
+{"materia":"Química da Madeira","assunto":"Reações químicas (bases/oxidantes)","pergunta":"Em processos químicos, as bases fortes atuam principalmente promovendo qual tipo de reação na madeira?","opcoes":["Neutralização de gases","Hidrólise e quebra de ligações químicas","Formação de cristais metálicos","Evaporação de sólidos orgânicos"],"correta":1,"explicacao":"Bases fortes promovem reações de hidrólise, quebrando ligações químicas em componentes como lignina e hemicelulose."},
+{"materia":"Química da Madeira","assunto":"Reações químicas (bases/oxidantes)","pergunta":"Qual componente da madeira é mais suscetível à ação de agentes oxidantes?","opcoes":["Celulose cristalina","Lignina","Água livre","Ar atmosférico"],"correta":1,"explicacao":"A lignina é o principal componente da madeira mais sensível à oxidação, sofrendo degradação estrutural."},
+
+{"materia":"Química da Madeira","assunto":"Cinzas","pergunta":"O que são 'cinzas' na madeira?","opcoes":["Restos de lignina","Compostos orgânicos","Constituintes inorgânicos","Celulose degradada"],"correta":2,"explicacao":"Cinzas são os componentes inorgânicos presentes na madeira, como minerais."},
+{"materia":"Química da Madeira","assunto":"Cinzas","pergunta":"As cinzas da madeira correspondem a quais substâncias?","opcoes":["Compostos orgânicos","Celulose e lignina","Elementos minerais inorgânicos","Proteínas estruturais"],"correta":2,"explicacao":"As cinzas correspondem aos constituintes inorgânicos, como sais minerais presentes na madeira."},
+{"materia":"Química da Madeira","assunto":"Cinzas","pergunta":"Qual alternativa descreve corretamente as cinzas na madeira?","opcoes":["São compostos orgânicos voláteis","São resíduos inorgânicos após a queima","São carboidratos estruturais","São proteínas da madeira"],"correta":1,"explicacao":"As cinzas são os resíduos inorgânicos que permanecem após a queima da madeira."},
+{"materia":"Química da Madeira","assunto":"Cinzas","pergunta":"Os componentes das cinzas incluem principalmente:","opcoes":["Celulose e hemicelulose","Extrativos orgânicos","Sais minerais como cálcio e potássio","Proteínas e enzimas"],"correta":2,"explicacao":"As cinzas são compostas por minerais como cálcio, potássio, magnésio, entre outros."},
+{"materia":"Química da Madeira","assunto":"Cinzas","pergunta":"Em relação à composição da madeira, as cinzas representam:","opcoes":["A maior fração da madeira","A fração orgânica principal","A parte estrutural da madeira","Uma pequena fração inorgânica"],"correta":3,"explicacao":"As cinzas representam uma pequena fração da madeira, composta por materiais inorgânicos."},
+
+{"materia":"Química da Madeira","assunto":"Processos químicos","pergunta":"Qual substância é mais usada para dissolver lignina em processos industriais?","opcoes":["Água","Ácidos fracos","Bases fortes (ex: NaOH)","Oxigênio"],"correta":2,"explicacao":"Bases fortes como NaOH são usadas para dissolver lignina, como no processo Kraft."},
+{"materia":"Química da Madeira","assunto":"Processos químicos","pergunta":"No processo de polpação Kraft, qual tipo de substância química é utilizado para remover a lignina?","opcoes":["Bases fortes","Ácidos concentrados","Água","Oxigênio"],"correta":0,"explicacao":"O processo Kraft utiliza bases fortes, como NaOH, para dissolver a lignina."},
+{"materia":"Química da Madeira","assunto":"Processos químicos","pergunta":"A ação de bases fortes na madeira resulta principalmente em:","opcoes":["Apenas remoção de água","Aumento de proteínas","Dissolução de lignina e degradação de carboidratos","Formação de minerais"],"correta":2,"explicacao":"Bases fortes dissolvem lignina e podem degradar carboidratos da madeira."},
+{"materia":"Química da Madeira","assunto":"Processos químicos","pergunta":"Qual substância abaixo tem pouca ação sobre a lignina em condições normais?","opcoes":["Bases fortes","Água","Ácidos concentrados","Oxidantes fortes"],"correta":1,"explicacao":"A água tem pouca ação sobre a lignina em condições normais de temperatura e pressão."},
+{"materia":"Química da Madeira","assunto":"Processos químicos","pergunta":"Qual dos seguintes agentes pode degradar a lignina por oxidação?","opcoes":["Água","Bases fracas","Sais neutros","Oxidantes fortes"],"correta":3,"explicacao":"Oxidantes fortes, como ozônio e permanganato, podem degradar a lignina."},
+{"materia":"Química da Madeira","assunto":"Processos químicos","pergunta":"Por que os constituintes inorgânicos devem ser evitados em processos industriais?","opcoes":["Porque aumentam a qualidade","Porque não reagem","Porque podem causar problemas nos processos","Porque são úteis demais"],"correta":2,"explicacao":"Minerais podem causar desgaste de equipamentos e interferir nas reações."},
+
+{"materia":"Química da Madeira","assunto":"Terpenos","pergunta":"Os terpenos na madeira estão relacionados principalmente a:","opcoes":["Estrutura celular","Produção de proteínas","Resinas e compostos voláteis","Minerais"],"correta":2,"explicacao":"Terpenos estão ligados à formação de resinas e substâncias voláteis."},
+{"materia":"Química da Madeira","assunto":"Terpenos","pergunta":"Os terpenos são compostos que na madeira estão associados principalmente a qual função?","opcoes":["Produção de proteínas","Resinas e compostos voláteis","Minerais estruturais","Estrutura celular"],"correta":1,"explicacao":"Terpenos estão relacionados à formação de resinas e compostos voláteis na madeira."},
+{"materia":"Química da Madeira","assunto":"Terpenos","pergunta":"Uma característica importante dos terpenos é que eles são:","opcoes":["Inorgânicos","Proteínas estruturais","Derivados do isopreno","Sais minerais"],"correta":1,"explicacao":"Os terpenos são compostos orgânicos derivados do isopreno."},
+{"materia":"Química da Madeira","assunto":"Terpenos","pergunta":"Os terpenos incluem substâncias como:","opcoes":["Resinas e óleos essenciais","Celulose e lignina","Cálcio e magnésio","Proteínas e enzimas"],"correta":0,"explicacao":"Os terpenos incluem resinas, óleos essenciais e outros compostos voláteis."},
+{"materia":"Química da Madeira","assunto":"Terpenos","pergunta":"Na madeira, os terpenos estão mais presentes em:","opcoes":["Madeiras de fibra curta","Madeiras de fibra longa","Minerais do solo","Parte inorgânica da madeira"],"correta":1,"explicacao":"Os terpenos são mais abundantes em madeiras de fibra longa, como coníferas."}
+
+]
+
+
+// ASSUNTOS CONCLUÍDOS
+// Chaves das matérias em minúsculo para padronização
+// true = concluído, false = não concluído
+
+const assuntosConcluidos={}
+
+//"História 6º Ano": {
+//"História: conceito e fontes históricas": false,
+//"Tempo histórico e calendário": false
+//}
+
+// ==========================
+// REFERÊNCIAS DE ELEMENTOS HTML
+
+const loginDiv=document.getElementById("login")
+const menuDiv=document.getElementById("menu")
+const quizDiv=document.getElementById("quiz")
+const btnEntrar=document.getElementById("btnEntrar")
+const btnConfirmar=document.getElementById("btnConfirmar")
+const btnProxima=document.getElementById("btnProxima")
+const btnVoltar=document.getElementById("btnVoltar")
+
+// ==========================
+// EVENTOS DOS BOTÕES
+
+btnEntrar.addEventListener("click", entrar)
+btnConfirmar.addEventListener("click", confirmarResposta)
+btnProxima.addEventListener("click", proxima)
+btnVoltar.addEventListener("click", voltarMenu)
+
+
+// ==========================
+// FUNÇÃO ENTRAR
+
+function entrar(){
+  let nome=document.getElementById("nomeUsuario").value.trim()
+  if(nome===""){alert("Digite seu nome"); return}
+  usuario=nome
+  localStorage.setItem("usuario-" + QUIZ_ID, nome)
+  loginDiv.style.display="none"
+  menuDiv.style.display="block"
+  criarMenuMaterias()
+}
+
+// ==========================
+// CRIAR MENU DE MATÉRIAS
+
+function criarMenuMaterias(){
+
+
+  menuDiv.innerHTML = "<h1>Quiz de Quimica da Madeira</h1><h2>Olá " + usuario + "</h2><h2>Escolha a matéria</h2>"
+  let materias = [...new Set(banco.map(p => p.materia))]
+
+  materias.forEach(m => {
+    let botao = document.createElement("div")
+    botao.className = "temaBtn"
+
+    // Calcular progresso total da matéria (incluindo assuntos concluídos)
+    let totalQuestoesMateria = banco.filter(p => p.materia === m).length
+    let acertosUsuario = 0
+    let assuntosDaMateria = [...new Set(banco.filter(p => p.materia === m).map(p => p.assunto))]
+
+    assuntosDaMateria.forEach(a => {
+      let chave = QUIZ_ID + "-" + m + "-" + a
+      let salvo = localStorage.getItem(chave)
+
+      // Somar acertos salvos
+      if (salvo) {
+        let dados = JSON.parse(salvo)
+        acertosUsuario += dados.acertos || 0
+      }
+
+      // Somar assuntos concluídos manualmente
+      if (assuntosConcluidos[m] && assuntosConcluidos[m][a]) {
+        let totalQuestoesAssunto = banco.filter(p => p.materia === m && p.assunto === a).length
+        acertosUsuario += totalQuestoesAssunto
+      }
+    })
+
+    let porcentagem = (totalQuestoesMateria > 0) ? (acertosUsuario / totalQuestoesMateria) * 100 : 0
+    botao.title = "Você acertou " + acertosUsuario + " de " + totalQuestoesMateria + " questões desta matéria"
+
+    botao.innerHTML =
+      "<div style='font-size:22px'>" + m + "</div>" +
+      "<div style='font-size:16px;opacity:0.8'>Progresso: " + acertosUsuario + " de " + totalQuestoesMateria + " questões corretas</div>" +
+      "<div class='progressoAssunto'><div class='barraInterna' style='width:" + porcentagem + "%'></div></div>"
+
+    botao.onclick = function() {
+      materiaSelecionada = m
+      Array.from(document.querySelectorAll(".temaBtn")).forEach(b => b.classList.remove("selecionadaMenu"))
+      botao.classList.add("selecionadaMenu")
+    }
+
+    menuDiv.appendChild(botao)
+  })
+
+  // Botão confirmar matéria
+  let confirmar = document.createElement("button")
+  confirmar.innerText = "Confirmar matéria"
+  confirmar.onclick = function() {
+    if (!materiaSelecionada) {
+      alert("Selecione uma matéria")
+      return
+    }
+    criarMenuAssuntos(materiaSelecionada)
+  }
+  menuDiv.appendChild(confirmar)
+
+  // Botão zerar progresso
+  let zerarUsuarioBtn=document.createElement("button")
+  zerarUsuarioBtn.innerText="Zerar usuário"
+  zerarUsuarioBtn.onclick=function(){
+    if(confirm("ATENÇÃO: você perderá o nome e todo o progresso deste quiz e terá que se registrar novamente. Deseja continuar?")){
+      for(let key in localStorage){
+        if(key.startsWith(QUIZ_ID + "-") || key === "usuario-" + QUIZ_ID){
+          localStorage.removeItem(key)
+        }
+      }
+      usuario=""
+      menuDiv.style.display="none"
+      loginDiv.style.display="block"
+      document.getElementById("nomeUsuario").value=""
+    }
+  }
+  menuDiv.appendChild(zerarUsuarioBtn)
+}
+
+// ==========================
+// CRIAR MENU DE ASSUNTOS
+
+function criarMenuAssuntos(materia){
+
+
+  menuDiv.innerHTML="<h1>Quiz de Quimica da Madeira</h1><h2>"+materia+"</h2><p>Escolha o assunto</p>"
+  let assuntos=[...new Set(banco.filter(p=>p.materia===materia).map(p=>p.assunto))]
+
+  assuntos.forEach(a=>{
+    let botao=document.createElement("div")
+    botao.className="temaBtn"
+
+    let chave=QUIZ_ID + "-" + materia + "-" + a
+    let salvo=localStorage.getItem(chave)
+if (assuntosConcluidos[materia] && assuntosConcluidos[materia][a]) {
+  localStorage.removeItem(chave)
+}
+
+    let totalQuestoes=banco.filter(p=>p.materia===materia && p.assunto===a).length
+    let respondidas=0
+    let acertos=0
+    let porcentagem=0
+    let progressoTexto="Respondidas: 0 de "+totalQuestoes+" | Acertos: 0"
+
+    if(salvo){
+      let dados=JSON.parse(salvo)
+      acertos=dados.acertos || 0
+      respondidas=dados.respondidasLista ? dados.respondidasLista.length : 0
+      porcentagem=(acertos/totalQuestoes)*100
+      progressoTexto="Respondidas: "+respondidas+" de "+totalQuestoes+" | Acertos: "+acertos
+    }
+
+    // MARCAR ASSUNTO CONCLUÍDO
+
+if (assuntosConcluidos[materia] && assuntosConcluidos[materia][a]) {
+  porcentagem = 100
+  progressoTexto = "Respondidas: " + totalQuestoes + " de " + totalQuestoes + " | Acertos: " + totalQuestoes
+}
+
+    botao.innerHTML=
+      "<div style='font-size:22px'>"+a+"</div>"+
+      "<div style='font-size:16px;opacity:0.8'>"+progressoTexto+"</div>"+
+      "<div class='progressoAssunto'><div class='barraInterna' style='width:"+porcentagem+"%'></div></div>"
+
+    botao.onclick=function(){
+
+if (assuntosConcluidos[materia] && assuntosConcluidos[materia][a]) {
+  alert("Este assunto já foi concluído.")
+  return
+}
+      assuntoSelecionado=a
+      Array.from(document.querySelectorAll(".temaBtn")).forEach(b=>b.classList.remove("selecionadaMenu"))
+      botao.classList.add("selecionadaMenu")
+    }
+    menuDiv.appendChild(botao)
+  })
+
+  // Botão iniciar quiz
+  let iniciar=document.createElement("button")
+
+
+  iniciar.innerText="Iniciar Quiz de Quimica da Madeira"
+
+  iniciar.onclick=function(){
+    if(!assuntoSelecionado){alert("Selecione um assunto");return}
+    iniciarQuiz(materiaSelecionada,assuntoSelecionado)
+  }
+  menuDiv.appendChild(iniciar)
+
+  // Botão voltar
+  let voltar=document.createElement("button")
+  voltar.innerText="Voltar para matérias"
+  voltar.onclick=function(){criarMenuMaterias()}
+  menuDiv.appendChild(voltar)
+}
+
+// ==========================
+// FUNÇÕES DE QUIZ
+
+function iniciarQuiz(materia,assunto){
+  perguntas=banco.filter(p=>p.materia===materia && p.assunto===assunto)
+  atual=0
+  pontos=0
+  erros=[]
+  menuDiv.style.display="none"
+  quizDiv.style.display="block"
+  carregar()
+}
+
+function carregar(){
+  let p=perguntas[atual]
+  document.getElementById("pergunta").innerText=p.pergunta
+  document.getElementById("tema").innerText=p.materia+" → "+p.assunto
+
+  for(let i=0;i<4;i++){
+    let op=document.getElementById("op"+i)
+    op.innerText=p.opcoes[i]
+    op.className="opcao"
+    op.onclick=function(){
+      opcaoSelecionada=i
+      Array.from(document.querySelectorAll(".opcao")).forEach(o=>o.classList.remove("selecionada"))
+      op.classList.add("selecionada")
+    }
+  }
+
+  document.getElementById("placar").innerText="Pergunta "+(atual+1)+" de "+perguntas.length+" | Pontos: "+pontos
+  document.getElementById("progresso").style.width=(atual/perguntas.length*100)+"%"
+  document.getElementById("explicacao").innerText=""
+  btnConfirmar.style.display="block"
+  btnProxima.style.display="none"
+  respondido=false
+  opcaoSelecionada=null
+}
+
+function confirmarResposta(){
+  if(opcaoSelecionada==null){alert("Selecione uma opção");return}
+  responder(opcaoSelecionada)
+  btnConfirmar.style.display="none"
+  btnProxima.style.display="block"
+}
+
+function responder(i){
+  if(respondido) return
+  respondido = true
+  let p = perguntas[atual]
+  let correta = p.correta
+
+  if(i == correta){
+    document.getElementById("op"+i).classList.add("correta")
+    pontos++
+
+  } else {
+    document.getElementById("op"+i).classList.add("errada")
+    document.getElementById("op"+correta).classList.add("correta")
+    erros.push(atual+1)
+  }
+  document.getElementById("explicacao").innerText = "Explicação: " + p.explicacao
+
+  let chave = QUIZ_ID + "-" + materiaSelecionada + "-" + assuntoSelecionado
+  let progresso = localStorage.getItem(chave)
+    ? JSON.parse(localStorage.getItem(chave))
+    : {acertos:0, total:perguntas.length, questoesAcertadas:[], respondidasLista:[]}
+
+if(i == correta){
+  // Caso acerte
+  if(!progresso.questoesAcertadas.includes(atual)){
+    progresso.acertos++
+    progresso.questoesAcertadas.push(atual)
+  }
+} else {
+  // Caso erre
+  // Se a questão já estava marcada como acertada, remover o acerto
+  let index = progresso.questoesAcertadas.indexOf(atual)
+  if(index !== -1){
+    progresso.questoesAcertadas.splice(index,1) // remove da lista de acertadas
+    progresso.acertos-- // subtrai um ponto
+  }
+}
+
+// Registrar que a questão foi respondida
+if(!progresso.respondidasLista.includes(atual)){
+  progresso.respondidasLista.push(atual)
+}
+
+  localStorage.setItem(chave, JSON.stringify(progresso))
+}
+
+if (assuntosConcluidos[materiaSelecionada] && assuntosConcluidos[materiaSelecionada][assuntoSelecionado]) {
+  localStorage.removeItem(chave)
+}
+
+function proxima(){
+  atual++
+  if(atual>=perguntas.length){
+    let acertos=pontos
+    let total=perguntas.length
+    let errosTotal=total-acertos
+    let listaErros=(erros.length>0) ? "\nQuestões erradas: " + erros.join(", ") : "\nVocê não errou nenhuma questão!"
+    alert("Resultado final\n\nAcertos: "+acertos+"\nErros: "+errosTotal+listaErros+"\n\nPressione OK para voltar ao menu")
+    quizDiv.style.display="none"
+    menuDiv.style.display="block"
+    criarMenuAssuntos(materiaSelecionada)
+    return
+  }
+  carregar()
+}
+
+function voltarMenu(){
+  quizDiv.style.display="none"
+  menuDiv.style.display="block"
+  criarMenuMaterias()
+}
+
+// ==========================
+// CARREGAR USUÁRIO SALVO
+
+window.onload=function(){
+  let nomeSalvo = localStorage.getItem("usuario-" + QUIZ_ID)
+  if(nomeSalvo){
+    usuario=nomeSalvo
+    loginDiv.style.display="none"
+    menuDiv.style.display="block"
+    criarMenuMaterias()
+  }
+}
+
+if(!assuntosConcluidos[materiaSelecionada]){
+  assuntosConcluidos[materiaSelecionada] = {}
+}
+
+if(pontos >= perguntas.length){
+  assuntosConcluidos[materiaSelecionada][assuntoSelecionado] = true
+}
+
+</script>
+</body>
+</html>
